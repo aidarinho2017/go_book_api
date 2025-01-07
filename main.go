@@ -2,6 +2,10 @@ package main
 
 import (
 	"errors"
+	"go_api/handlers"
+	"go_api/middleware"
+	"go_api/models"
+
 	"net/http"
 	"strings"
 
@@ -128,7 +132,16 @@ func containsIgnoreCase(source, target string) bool {
 }
 
 func main() {
+	models.ConnectDatabase()
 	router := gin.Default()
+	router.POST("/register", handlers.Register)
+	router.POST("/login", handlers.Login)
+	protected := router.Group("/")
+	protected.Use(middleware.JWTAuthMiddleware())
+	protected.GET("/protected", func(c *gin.Context) {
+		username := c.MustGet("username").(string)
+		c.JSON(http.StatusOK, gin.H{"message": "Welcome " + username})
+	})
 	router.GET("/books", getBooks)
 	router.GET("/books/:id", bookById)
 	router.POST("/books", createBooks)
