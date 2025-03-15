@@ -12,10 +12,24 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type User struct {
+	ID             int    `json:"id"`
+	Username       string `json:"username"`
+	PasswordHash   string `json:"-"`
+	Age            int    `json:"age"`
+	Identification string `json:"identification"`
+	Email          string `json:"email"`
+	Phone          string `json:"phone"`
+}
+
 func Register(c *gin.Context) {
 	var req struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
+		Username       string `json:"username"`
+		Password       string `json:"password"`
+		Age            int    `json:"age"`
+		Identification string `json:"identification"`
+		Email          string `json:"email"`
+		Phone          string `json:"phone"`
 	}
 
 	if err := c.BindJSON(&req); err != nil {
@@ -23,12 +37,14 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Normalize the username for case-insensitive comparison
 	normalizedUsername := strings.ToLower(req.Username)
-
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 
-	_, err := models.DB.Exec(context.Background(), "INSERT INTO users2 (username, password_hash) VALUES ($1, $2)", normalizedUsername, string(hashedPassword))
+	_, err := models.DB.Exec(context.Background(), `
+		INSERT INTO users2 (username, password_hash, age, identification, email, phone) 
+		VALUES ($1, $2, $3, $4, $5, $6)`,
+		normalizedUsername, string(hashedPassword), req.Age, req.Identification, req.Email, req.Phone)
+
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value") {
 			c.JSON(http.StatusConflict, gin.H{"message": "Username already exists"})
