@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type job struct {
@@ -33,6 +34,33 @@ var jobApplications []jobApplication = []jobApplication{}
 
 func GetJobs(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, jobs)
+}
+
+func getJobsFiltered(c *gin.Context) {
+	location := c.Query("location")
+	minCost := c.Query("min_cost")
+	maxCost := c.Query("max_cost")
+	var filteredJobs []job
+	minimumCost, err := strconv.Atoi(minCost)
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "wrong Input"})
+		return
+	}
+	maximumCost, err := strconv.Atoi(maxCost)
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "wrong Input"})
+		return
+	}
+
+	for _, j := range jobs {
+
+		if (location == "" || j.Location == location) &&
+			(minCost == "" || j.Cost >= minimumCost) &&
+			(maxCost == "" || j.Cost <= maximumCost) {
+			filteredJobs = append(filteredJobs, j)
+		}
+	}
+	c.JSON(http.StatusOK, filteredJobs)
 }
 
 func CreateJobs(c *gin.Context) {
@@ -92,4 +120,40 @@ func UpdateApplicationStatus(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusBadRequest, "bad request")
+}
+
+func UpdateJob(c *gin.Context) {
+	jobId := c.Param("id")
+	var updateData map[string]interface{}
+
+	if err := c.BindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid input"})
+		return
+	}
+
+	for i, job := range jobs {
+		if job.ID == jobId {
+			// Update only provided fields
+			if title, exists := updateData["title"].(string); exists {
+				jobs[i].Title = title
+			}
+			if author, exists := updateData["author"].(string); exists {
+				jobs[i].Author = author
+			}
+			if cost, exists := updateData["cost"].(float64); exists { // JSON numbers default to float64
+				jobs[i].Cost = int(cost)
+			}
+			if location, exists := updateData["location"].(string); exists {
+				jobs[i].Location = location
+			}
+			if status, exists := updateData["status"].(string); exists {
+				jobs[i].Status = status
+			}
+
+			c.JSON(http.StatusOK, gin.H{"message": "Job updated", "job": jobs[i]})
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, gin.H{"message": "Job not found"})
 }

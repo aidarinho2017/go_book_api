@@ -1,16 +1,13 @@
 package main
 
 import (
-	"errors"
 	"go_api/clients"
 	"go_api/handlers"
 	"go_api/middleware"
 	"go_api/models"
 
-	"net/http"
-	"strings"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func main() {
@@ -26,7 +23,7 @@ func main() {
 	})
 
 	router.GET("/jobs", clients.GetJobs)
-
+	router.GET("/jobs/:location/:mincost/:maxcost")
 	router.POST("/apply", clients.ApplyToJob)
 	router.PUT("/application/:id/:status", clients.UpdateApplicationStatus) // Accept or Deny
 	router.GET("/jobs", clients.GetJobs)
