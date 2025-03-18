@@ -26,7 +26,6 @@ func main() {
 	router.GET("/jobs/:location/:mincost/:maxcost")
 	router.POST("/apply", clients.ApplyToJob)
 	router.PUT("/application/:id/:status", clients.UpdateApplicationStatus) // Accept or Deny
-	router.GET("/jobs", clients.GetJobs)
 	router.POST("/jobs", clients.CreateJobs)
 	router.GET("/job/:id", clients.JobByID)
 
